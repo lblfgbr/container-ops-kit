@@ -2,7 +2,7 @@
 
 > 将 UT 治理、MR 检视与合入、质量检查和构建部署组织成可执行、可验证、可追踪的工作流程。
 
-Ops Studio（仓库名 `ops-studio`）面向研发人员、代码检视人员和版本质量负责人，将 Pi Agent 与 CodeHub、WeLink、质量数据源、SSH、Kubernetes 和 Helm 连接起来，覆盖从质量问题发现、测试修复、代码检视到合入跟踪，以及构建、产物对比和环境部署的日常工作。
+Ops Studio（[GitHub 仓库 `lblfgbr/ops-studio`](https://github.com/lblfgbr/ops-studio)）面向研发人员、代码检视人员和版本质量负责人，将 Pi Agent 与 CodeHub、WeLink、质量数据源、SSH、Kubernetes 和 Helm 连接起来，覆盖从质量问题发现、测试修复、代码检视到合入跟踪，以及构建、产物对比和环境部署的日常工作。
 
 项目重点解决 AI 进入真实研发流程后的三个问题：**如何把分散操作串成持续推进的任务，如何用测试与远端状态验证执行结果，如何让人工判断和经验进入后续自动化过程。** AI 负责需要理解代码与上下文的修复和检视，平台负责流程编排、结果校验和状态留存，人在关键节点确认质量、处理异常。
 
@@ -120,6 +120,8 @@ UT 治理要求 Agent 仅修改 `src/test` 下的测试文件，禁止修改生�
 项目内置 Skill 保存在 `skills/`，随项目代码更新，当前包含完整的 `code-review-skill`。平台启动 Pi 时统一加载该目录中的 Skill；同名时项目版本优先，个人目录及 Pi 原有资源发现继续保留。Windows 个人目录通过当前用户主目录解析为 `%USERPROFILE%\.agents\skills`，不需要修改用户名或复制文件。明确指定 `--no-skills` 的知识整理等任务不注入 Skill。新增项目 Skill 时放入 `skills/<名称>/SKILL.md`，配套指南、脚本放在该 Skill 目录内；下次启动 Pi 生效。该加载规则只作用于平台启动的 Pi，不修改本机全局配置。
 
 ## 启动
+
+项目包名为 `ops-studio`，前端包名为 `ops-studio-frontend`。从旧版 `container-ops-kit` 升级时，保留原工作目录和数据即可；已有远端构建路径、用户凭据目录、浏览器存储键及依赖安装标记继续沿用旧名称，以兼容历史任务和配置。Windows 启动脚本同时识别新旧包名的前端实例。
 
 需要 Node.js 22.22.3+（22.x）或 24.15+（24.x）和 npm，支持 npm 10.9.8。Windows 双击 `start.bat`，脚本会按锁文件安装依赖、迁移检测到的旧 H2 数据、编译后端，然后启动：
 
