@@ -31,7 +31,7 @@ if errorlevel 1 goto install_failed
 powershell -NoProfile -ExecutionPolicy Bypass -File "%LOG_RUNNER%" -WorkingDirectory "%PROJECT_ROOT%" -LogFile "%LOG_ROOT%\startup\startup.log" -LoggedCommand "node scripts/install-locked.mjs frontend"
 if errorlevel 1 goto frontend_install_failed
 
-start "Container Ops Kit Backend" powershell -NoExit -NoProfile -ExecutionPolicy Bypass -File "%LOG_RUNNER%" -WorkingDirectory "%PROJECT_ROOT%" -LogFile "%LOG_ROOT%\backend\process.log" -LoggedCommand "npm start"
+start "Ops Studio Backend" powershell -NoExit -NoProfile -ExecutionPolicy Bypass -File "%LOG_RUNNER%" -WorkingDirectory "%PROJECT_ROOT%" -LogFile "%LOG_ROOT%\backend\process.log" -LoggedCommand "npm start"
 echo Waiting for backend on http://127.0.0.1:%PLATFORM_PORT%...
 for /l %%I in (1,1,90) do (
   powershell -NoProfile -Command "try { $r = Invoke-WebRequest -UseBasicParsing -Uri 'http://127.0.0.1:%PLATFORM_PORT%/api/health' -TimeoutSec 2; if ($r.StatusCode -eq 200) { exit 0 } else { exit 1 } } catch { exit 1 }"
@@ -43,7 +43,7 @@ pause
 exit /b 1
 
 :backend_ready
-start "Container Ops Kit Frontend" powershell -NoExit -NoProfile -ExecutionPolicy Bypass -File "%LOG_RUNNER%" -WorkingDirectory "%PROJECT_ROOT%\frontend" -LogFile "%LOG_ROOT%\frontend\frontend.log" -LoggedCommand "npm run dev -- --host 0.0.0.0 --port %FRONTEND_PORT% --strictPort"
+start "Ops Studio Frontend" powershell -NoExit -NoProfile -ExecutionPolicy Bypass -File "%LOG_RUNNER%" -WorkingDirectory "%PROJECT_ROOT%\frontend" -LogFile "%LOG_ROOT%\frontend\frontend.log" -LoggedCommand "npm run dev -- --host 0.0.0.0 --port %FRONTEND_PORT% --strictPort"
 for /l %%I in (1,1,60) do (
   powershell -NoProfile -Command "try { $r = Invoke-WebRequest -UseBasicParsing -Uri 'http://127.0.0.1:%FRONTEND_PORT%' -TimeoutSec 1; if ($r.StatusCode -eq 200) { exit 0 } else { exit 1 } } catch { exit 1 }"
   if not errorlevel 1 goto frontend_ready
@@ -129,8 +129,8 @@ function Test-LegacyPortOwner($Process, [int]$Port) {
         }
         if ($Port -eq $FrontendPort -and $line -match '(?i)(?:^|\s)"?(?:\.\\)?node_modules\\vite\\bin\\vite\.js(?:"|\s|$)') {
             $package = Invoke-RestMethod -Uri "http://127.0.0.1:$FrontendPort/package.json" -TimeoutSec 2
-            return (($package.name -eq 'container-ops-kit' -and $package.scripts.start -eq 'node dist/backend-ts/src/main.js') -or
-                ($package.name -eq 'container-ops-kit-frontend' -and $package.scripts.dev -eq 'vite'))
+            return (($package.name -in @('ops-studio', 'container-ops-kit') -and $package.scripts.start -eq 'node dist/backend-ts/src/main.js') -or
+                ($package.name -in @('ops-studio-frontend', 'container-ops-kit-frontend') -and $package.scripts.dev -eq 'vite'))
         }
     } catch { return $false }
     return $false
