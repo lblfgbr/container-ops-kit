@@ -1,4 +1,4 @@
-# Studio 正式迁移验证范围
+# Ops Studio 正式页面验证范围
 
 本清单依据 2026-10-25 仓库中的测试代码整理。测试存在不等于本次运行通过；运行结果以测试命令输出为准。
 
@@ -69,7 +69,7 @@
 - `Vite release excludes fixture modules, mock data hooks, test network interception and prototype CSP`：发布模块图不包含 `frontend/tests` 或 `frontend/prototypes`；产物不包含 fixture/mock 标记、测试网络覆盖或限制真实连接的原型 CSP。
 - `compiled release boots the redesigned tools without replacing real browser transport functions`：执行编译后入口，JSON 新工作区出现，原 `fetch`、`EventSource`、`WebSocket`、`open` 对象未被替换，初始请求不写入。
 
-`studio-api.js` 与 `studio-parser.js` 仅由测试 harness 引入。fixture 中的网络拦截、模拟数据、SSE 实现、下载数据及预览标记属于测试执行环境。正式入口没有测试模式开关。`prototype-runtime.js` 虽然沿用旧文件名，仍是正式 API 运行时，不能按文件名中的 `prototype` 一词将其排除。
+`studio-api.js` 与 `studio-parser.js` 仅由测试 harness 引入。fixture 中的网络拦截、模拟数据、SSE 实现、下载数据及预览标记属于测试执行环境。正式入口没有测试模式开关。`prototype-runtime.js` 是正式 API 运行时，不能按文件名中的 `prototype` 一词将其排除。
 
 ## 既有测试与仍需区别的覆盖
 
