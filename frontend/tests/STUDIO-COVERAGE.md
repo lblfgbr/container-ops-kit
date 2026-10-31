@@ -2,11 +2,12 @@
 
 本清单依据 2026-10-25 仓库中的测试代码整理。测试存在不等于本次运行通过；运行结果以测试命令输出为准。
 
-## 三类测试入口
+## 四类测试入口
 
-- 既有测试读取根 `index.html`，或分别加载 `prototype-runtime.js`、构建/部署展示模块。它们继续覆盖原业务行为，但不会执行 Vite 的 `transformIndexHtml`，因此不能代表新增 Studio 增强层已经运行。
-- `studio-workspace`、`studio-container`、`studio-automation`、`studio-automation-flows`、`studio-mr`、`studio-tools-portal`、`studio-tools-parity`、`studio-applications` 使用 `helpers/studio-harness.mjs`。该工具打包正式 `frontend/src/studio-runtime.js`，与真实 `index.html` 一起执行；测试 API 响应通过独立 fixture 或测试内覆盖的 `fetch` 提供。未读取 `frontend/prototypes/ops-studio-prototype.html`。
+- 既有测试读取 `frontend/index.html`，或分别加载 `prototype-runtime.js`、构建/部署展示模块。它们继续覆盖原业务行为，但不会执行 Vite 的 `transformIndexHtml`，因此不能代表新增 Studio 增强层已经运行。
+- `studio-workspace`、`studio-container`、`studio-automation`、`studio-automation-flows`、`studio-mr`、`studio-tools-portal`、`studio-tools-parity`、`studio-applications` 使用 `helpers/studio-harness.mjs`。该工具打包正式 `frontend/src/studio-runtime.js`，与真实 `frontend/index.html` 一起执行；测试 API 响应通过独立 fixture 或测试内覆盖的 `fetch` 提供。未读取 `frontend/prototypes/ops-studio-prototype.html`。
 - `studio-release.test.mjs` 使用正式 `frontend/vite.config.ts`、`build({write:false})`，检查发布 HTML、模块图及样式资产，并启动编译后的入口。它不修改 `frontend/dist`。
+- `standalone-demo.test.mjs` 读取根目录的 `mock-demo.html`，在 `file://` 文档上下文检查 20 个路由、模拟 MR 审核与构建事件、外部传输隔离及刷新重置。它验证独立演示行为，不替代正式应用测试或真实浏览器视觉验收。页面修改先在此演示中完成，用户确认后再实现到正式代码；`npm run demo` 仅用于首次生成，批准后的正式实现同步使用 `npm run demo -- --overwrite`，同步前确认没有待确认或尚未同步的演示修改。`frontend/prototypes/verify-*.mjs` 也默认验证根目录的 `mock-demo.html`。
 
 ## 正式入口的行为覆盖
 
@@ -72,7 +73,7 @@
 
 ## 既有测试与仍需区别的覆盖
 
-- MR 的既有 `group-mr-entry.test.mjs`、`group-mr-actions.test.mjs`、`group-mr-workbench.test.mjs` 仍测试原始 `index.html`；新增 `studio-mr` 对表中主链、异常写入和 SHA 防护通过增强入口重新验证。不能据此认定所有旧 MR 测试都已带新增强层重跑。
+- MR 的既有 `group-mr-entry.test.mjs`、`group-mr-actions.test.mjs`、`group-mr-workbench.test.mjs` 仍测试原始 `frontend/index.html`；新增 `studio-mr` 对表中主链、异常写入和 SHA 防护通过增强入口重新验证。不能据此认定所有旧 MR 测试都已带新增强层重跑。
 - UT 建单、报告、流转及知识维护已有上表的增强入口验证；`quality-reports.test.mjs` 中其他边界场景、质量分页、定时计划创建等原页面测试，不能直接算作增强入口覆盖。
 - `platform-applications.test.mjs` 继续覆盖原页面，新增 `studio-applications` 通过增强入口补齐 UI 驱动的 CRUD、写入错误、URL/XSS 和 iframe 生命周期；iframe 的外部站点连接和其响应安全策略仍需要目标环境验证。
 - `home/overview`、`container/dashboard`、`automation/tools` 在正式入口的 20 路由比较中有控件与只读启动检查；该比较不代表这些页面的所有业务操作已逐项执行。

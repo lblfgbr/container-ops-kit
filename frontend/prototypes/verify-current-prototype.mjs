@@ -1,7 +1,7 @@
 import {readFile} from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import {JSDOM,VirtualConsole} from '../node_modules/jsdom/lib/api.js';
-const html=await readFile(new URL('./ops-studio-prototype.html',import.meta.url),'utf8');
+const html=await readFile(new URL('../../mock-demo.html',import.meta.url),'utf8');
 const errors=[];const vc=new VirtualConsole();vc.on('jsdomError',e=>{if(!e.message.includes('Not implemented'))errors.push(e.message)});
 const dom=new JSDOM(html,{runScripts:'dangerously',url:'http://localhost/#/automation/group-mr',virtualConsole:vc,beforeParse(w){w.Response=Response;w.Headers=Headers;w.scrollTo=()=>{};w.HTMLDialogElement.prototype.showModal=function(){this.open=true};w.HTMLDialogElement.prototype.close=function(){this.open=false};}});
 const w=dom.window,d=w.document,wait=()=>new Promise(r=>setTimeout(r,80));const click=s=>{assert.ok(d.querySelector(s),s);d.querySelector(s).click()};

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {JSDOM} from 'jsdom';
-const html=await readFile(new URL('../../index.html',import.meta.url),'utf8');
+const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
 const pause=()=>new Promise(r=>setTimeout(r,100));
 test('MR roles and repository override settings can be edited and saved from the page',async()=>{
  let saved;const config={roles:{reviewers:['r123'],approvers:[],assignees:[]},repositories:[],notifications:true,autoRepair:true,contact:'',pipelineSeconds:60,reviewSeconds:300,maxRepairRounds:3,reminderMinutes:120,workHours:{weekdaysOnly:true,start:9,end:18},welinkAccounts:{}};

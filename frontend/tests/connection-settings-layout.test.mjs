@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {JSDOM} from 'jsdom';
-const html=await readFile(new URL('../../index.html',import.meta.url),'utf8');
+const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
 const pause=()=>new Promise(resolve=>setTimeout(resolve,60));
 test('settings groups expose one entry per configuration, isolate drawers and save Grafana only',async t=>{
  const writes=[];let connection={url:'https://example.test/query',datasourceId:1,timeoutSeconds:30,parallel:2,auth:'none'};

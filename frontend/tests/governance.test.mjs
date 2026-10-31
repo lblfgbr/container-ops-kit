@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {JSDOM} from 'jsdom';
-const html=await readFile(new URL('../../index.html',import.meta.url),'utf8');
+const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
 const pause=()=>new Promise(r=>setTimeout(r,150));
 test('默认成果看板展示真实指标与失败原因，执行详情按需打开，版本筛选刷新统计',async()=>{
  const requests=[];const now=new Date().toISOString();

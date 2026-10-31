@@ -3,7 +3,7 @@ import {readFile} from 'node:fs/promises'
 import test from 'node:test'
 import {JSDOM} from 'jsdom'
 
-const html=await readFile(new URL('../../index.html',import.meta.url),'utf8')
+const html=await readFile(new URL('../index.html',import.meta.url),'utf8')
 const response=(data,ok=true)=>({ok,status:ok?200:500,json:async()=>data,text:async()=>JSON.stringify(data)})
 const flush=()=>new Promise(r=>setTimeout(r,30))
 async function fixture(t,{route='tools',save,records=[],history=[]}={}){

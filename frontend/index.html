@@ -347,12 +347,12 @@
     .group-mr-check-cell input[type=checkbox]{width:16px;height:16px;margin:0;accent-color:var(--brand)}.group-mr-check-cell{text-align:center}.group-mr-action-cell{text-align:right;white-space:nowrap}.group-mr-action-cell button{width:auto;white-space:nowrap}.group-mr-action-cell button:disabled{opacity:.45;cursor:not-allowed}
 .ct-bin-invalid{background:#fff5f5}.ct-bin-warning{background:#fffbf0}.ct-bin-invalid td:nth-child(3),.ct-bin-invalid .ct-bin-reason{color:#b93640}.ct-bin-warning td:nth-child(3),.ct-bin-warning .ct-bin-reason{color:#97600b}.ct-bin-reason{margin-top:4px}.ct-tag-group summary small{font-weight:400;color:#758195}.ct-tag-chips{display:flex;gap:8px;overflow-x:auto;padding:4px 0 14px}.ct-tag-chips button{flex-shrink:0}.ct-tag-group{margin:10px 0;border:1px solid var(--line,#e5e7eb);border-radius:8px;padding:10px}.ct-tag-group>summary{cursor:pointer;font-weight:600}.ct-tag-chips [hidden]{display:none} .mr-history-notes{max-height:280px;overflow:auto;padding:12px;border-bottom:1px solid #ddd}.mr-history-notes table{width:100%;table-layout:fixed}
 </style>
-  <link rel="stylesheet" href="/frontend/src/quality-workspace.css">
-  <link rel="stylesheet" href="/frontend/src/studio-workspace.css">
-  <link rel="stylesheet" href="/frontend/src/home-workbench.css">
-  <link rel="stylesheet" href="/frontend/src/platform-workspace.css">
-  <link rel="stylesheet" href="/frontend/src/workspace-layout.css">
-  <link rel="stylesheet" href="/frontend/src/common-tools.css">
+  <link rel="stylesheet" href="/src/quality-workspace.css">
+  <link rel="stylesheet" href="/src/studio-workspace.css">
+  <link rel="stylesheet" href="/src/home-workbench.css">
+  <link rel="stylesheet" href="/src/platform-workspace.css">
+  <link rel="stylesheet" href="/src/workspace-layout.css">
+  <link rel="stylesheet" href="/src/common-tools.css">
 </head>
 <body>
   <div id="app"></div>
@@ -1014,7 +1014,7 @@
       const nav=`<nav class="variant-a-nav" aria-label="容器运维导航">${navItem('dashboard','工作台','home')}<div class="nav-section">研发流程</div>${navItem('build','构建','build')}${navItem('deploy','部署','deploy')}<div class="nav-section">容器运维</div>${navItem('operations','服务资源','operations')}<div class="nav-section">系统管理</div>${navItem('resources','环境管理','resources')}</nav>`;
       const portal=state.platformDomain==='portal';
       const content=state.applicationId?applicationEmbeddedContent():portal?(state.portalPage==='overview'?platformOverview():platformTools()):state.platformDomain==='tools'?toolsContent():state.platformDomain==='applications'?applicationContent():state.platformDomain==='container'?(state.page==='dashboard'?dashboardA():commonPage(state.page)):state.platformDomain==='automation'?automationContent():`<section class="panel platform-placeholder"><div class="platform-placeholder-content"><div class="platform-placeholder-symbol">虚</div><h1>虚机运维</h1><p>这里先作为独立平台域预留，不提前定义功能和页面。</p><span class="platform-boundary">平台边界已预留</span></div></section>`;
-      return `<div class="variant-a-shell studio-shell ${portal?'pr-portal-shell':''}">${platformHeader()}${portal?'':`<aside class="variant-a-sidebar">${state.platformDomain==='container'?nav:state.platformDomain==='automation'?automationNav():state.platformDomain==='applications'?applicationNav():state.platformDomain==='tools'?toolsNav():''}${platformRelated()}<div class="studio-sidebar-bottom"><button class="studio-settings-link" data-portal-page="tools">← 返回工具中心</button>${state.platformDomain==='automation'?'<button class="studio-settings-link" data-automation-nav="settings">连接与设置</button>':''}<div class="variant-a-user">V0.2.200</div></div></aside>`}<main class="variant-a-main ${!state.applicationId&&['automation','container'].includes(state.platformDomain)?'workspace-layout':''}">${content}</main>${portal?'<div class="pr-home-version">V0.2.200</div>':''}</div>`;
+      return `<div class="variant-a-shell studio-shell ${portal?'pr-portal-shell':''}">${platformHeader()}${portal?'':`<aside class="variant-a-sidebar">${state.platformDomain==='container'?nav:state.platformDomain==='automation'?automationNav():state.platformDomain==='applications'?applicationNav():state.platformDomain==='tools'?toolsNav():''}${platformRelated()}<div class="studio-sidebar-bottom"><button class="studio-settings-link" data-portal-page="tools">← 返回工具中心</button>${state.platformDomain==='automation'?'<button class="studio-settings-link" data-automation-nav="settings">连接与设置</button>':''}<div class="variant-a-user">V0.2.202</div></div></aside>`}<main class="variant-a-main ${!state.applicationId&&['automation','container'].includes(state.platformDomain)?'workspace-layout':''}">${content}</main>${portal?'<div class="pr-home-version">V0.2.202</div>':''}</div>`;
     }
 
     let toastTimer;

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {JSDOM} from 'jsdom';
-const html=await readFile(new URL('../../index.html',import.meta.url),'utf8');
+const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
 let runtime='';for(const file of ['build-results.js','deployment-selection.js','deployment-presentation.js','environment-presentation.js','deployment-history.js'])runtime+=(await readFile(new URL('../src/'+file,import.meta.url),'utf8')).replace(/^import .*\n/gm,'').replace(/^export /gm,'')+'\n;\n';
 runtime+='const persistDeploymentSelection=saveDeploymentSelection;\n'+(await readFile(new URL('../src/prototype-runtime.js',import.meta.url),'utf8')).replace(/^import .*\n/gm,'');
 const wait=()=>new Promise(r=>setTimeout(r,40));

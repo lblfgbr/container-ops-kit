@@ -1,5 +1,19 @@
 /* Isolated in-memory adapter for the unchanged project UI. Never falls through to network. */
 (()=>{
+// Some file:// browser environments reject History API updates even for a hash.
+// Keep the offline demo's navigation in this document and preserve back/forward behavior.
+if(location.protocol==='file:')for(const method of ['pushState','replaceState']){
+  const original=window.history[method].bind(window.history);
+  window.history[method]=(state,title,url)=>{
+    if(url==null)return original(state,title,url);
+    const target=new URL(url,location.href),current=new URL(location.href);
+    if(target.protocol!==current.protocol||target.host!==current.host||target.pathname!==current.pathname||target.search!==current.search)throw new Error('离线演示只允许当前文件内导航');
+    try{return original(state,title,url)}catch(error){
+      if(error.name!=='SecurityError')throw error;
+      if(method==='replaceState')location.replace(target.href);else location.hash=target.hash;
+    }
+  };
+}
 for(const key of ['localStorage','sessionStorage']){const data=new Map();Object.defineProperty(window,key,{value:{getItem:k=>data.get(k)??null,setItem:(k,v)=>data.set(k,String(v)),removeItem:k=>data.delete(k),clear:()=>data.clear()}})}
 const now=()=>new Date().toISOString(),sha='a'.repeat(40),clone=x=>JSON.parse(JSON.stringify(x));
 const versions=[{id:1,code:'R27C10',name:'R27C10',locked:false},{id:2,code:'R27C00',name:'R27C00',locked:false}];
@@ -18,8 +32,8 @@ const applications=[
   ['团队知识库','查阅部署说明、故障处理记录和常见问题。','wiki','其他应用','','全环境','研发效能组'],
   ['审计日志','检索模拟操作记录，核对变更时间与执行结果。','audit','日志检索','','验证环境','平台运维组'],
   ['测试报告中心','汇总测试用例、覆盖率及版本质量报告。','reports','研发工具','automation','研发环境','质量团队']
-].map(([name,description,path,category,workspace,environment,owner],i)=>({id:'demo-app-'+(i+1),revision:0,name,description,url:'https://example.test/'+path,category,openMode:i%2?'newtab':'embedded',workspace,owner,environment}));
-localStorage.setItem('ops-application-favorites',JSON.stringify(['demo-app-1','demo-app-2','demo-app-3']));
+].map(([name,description,path,category,workspace,environment,owner],i)=>({id:'10000000-0000-4000-8000-'+String(i+1).padStart(12,'0'),revision:0,name,description,url:'https://example.test/'+path,category,openMode:i%2?'newtab':'embedded',workspace,owner,environment}));
+localStorage.setItem('ops-application-favorites',JSON.stringify(applications.slice(0,3).map(app=>app.id)));
 const reportConfig={versions:versions.map(v=>({version:v.code,baseBranch:'release/'+v.code,ticket:'DEMO-2026'})),dateMode:'yesterday',username:'demo',ticket:'DEMO-2026',workspaceRoot:'/workspace/demo',teams:['Demo 平台组'],domain:'Access',schedule:{enabled:false,frequency:'weekdays',weekday:1,time:'09:00',timezone:'Asia/Shanghai',action:'FETCH'}};
 const reports=[{id:'report-1',jobId:'quality-1',status:'READY',createdAt:now(),config:reportConfig,trigger:'MANUAL',messages:[],claimed:[],taskIds:[],plan:repos.map((r,i)=>({version:'R27C10',repository:r,baseBranch:'release/R27C10',repairBranch:'demo/ut-'+r,failedTests:i+1,lineCoverage:.62+i*.04,lineGoal:.8,branchCoverage:.48+i*.05,branchGoal:.7,language:i===3?'Cpp':i%2?'TypeScript':'Java',team:i%2?'Access_网络优化开放组':'Access_智能驾舱组',configured:true,repositoryUrl:'https://example.test/'+r+'.git'}))}];
 const stores={'/api/platform/applications':applications,'/api/release-versions':versions,'/api/environments':environments,'/api/auto-ut/reports':reports,'/api/auto-ut/tasks':[],'/api/auto-ut/tickets':[],'/api/quality/jobs':[],'/api/automation/schedules':[],'/api/build-tasks':[],'/api/build-artifacts':[],'/api/deployment-tasks':[]};const settings={};settings['/api/auto-ut/mr-settings']={roles:{reviewers:['demo-reviewer'],approvers:['demo-owner'],assignees:[]},repositories:[],notifications:true,autoRepair:true,contact:'demo-owner',pipelineSeconds:60,reviewSeconds:300,maxRepairRounds:3,reminderMinutes:120,workHours:{weekdaysOnly:true,start:9,end:18},welinkAccounts:{}};settings['/api/automation/language-settings']={java:{mavenRepository:'/workspace/demo/cache'}};settings['/api/auto-ut/welink-mcp-settings']={config:{packageUrl:'https://example.test/mock.tar.gz',indexUrl:'https://example.test/simple',insecureHosts:''},defaults:{packageUrl:'https://example.test/mock.tar.gz',indexUrl:'https://example.test/simple',insecureHosts:''}};const knowledge={items:[{id:'k1',repo:pending[0].repo,title:'连接必须在异常路径释放',content:'使用 finally 释放连接，确保异常路径不会泄漏。',scope:'连接池调用',status:'active',sources:[]}],reviews:[]};
@@ -55,11 +69,18 @@ function world(environmentId,namespace){const key=String(environmentId)+'/'+name
 function resourceDocument(row){return {yaml:row.yaml,resourceVersion:row.resourceVersion,managedByHelm:row.managedByHelm,coordinates:{name:row.name,namespace:row.namespace,group:row.group,version:row.version,resource:row.resource}}}
 function parseResource(body){try{const obj=window.__prototypeYaml.parse(body.yaml);const type=resourceTypes.find(t=>t.kind===obj?.kind);if(!type||!obj?.metadata?.name)throw Error('请提供支持的 kind 和 metadata.name');return {type,obj}}catch(error){return {error:error.message}}}
 
-const commands=window.__prototypeBinlog.builtinDefinitions.map(c=>({...c,builtin:true,revision:'mock-1'}));
+const builtinCommands=window.__prototypeBinlog.builtinDefinitions.map(c=>({...c,builtin:true,revision:'mock-1'}));
+const commands=clone(builtinCommands);let commandRevision=1;
+function mockCommand(input){
+  if(!input||typeof input.code!=='string'||!/^[a-fA-F0-9]{4}$/.test(input.code)||typeof input.name!=='string'||!input.name.trim()||input.name.trim().length>100)throw Error('请提供有效的命令码和名称');
+  const code=input.code.toLowerCase(),sample=input.sample??'';
+  if(typeof sample!=='string'||sample.length>262144)throw Error('命令示例无效或过长');
+  return {code,name:input.name.trim(),sample,fields:window.__prototypeBinlog.validateFields(input.fields,code)};
+}
 
 const ok=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{'Content-Type':'application/json'}});const fail=(message,status=409)=>ok({message},status);window.__mockRequests=[];
-window.fetch=async(input,options={})=>{const url=new URL(typeof input==='string'?input:input.url,'http://mock.local'),p=url.pathname,method=options.method||'GET';let body={};if(typeof options.body==='string'){try{body=JSON.parse(options.body)}catch{}}window.__mockRequests.push({path:p,method});
-if(!p.startsWith('/api/'))return fail('独立原型禁止外部网络请求',403);
+window.fetch=async(input,options={})=>{const url=new URL(typeof input==='string'?input:input.url,'http://studio.test'),p=url.pathname,method=options.method||'GET';let body={};if(typeof options.body==='string'){try{body=JSON.parse(options.body)}catch{}}window.__mockRequests.push({path:p,url:url.pathname+url.search,method,body:typeof options.body==='string'?clone(body):null});
+if(!['http://studio.test','http://mock.local'].includes(url.origin)||!p.startsWith('/api/'))return fail('独立原型禁止外部网络请求',403);
 
 
 if(p.match(/\/environments\/[^/]+\/(test|test-connection|connection-test)$/)){const e=environments.find(e=>String(e.id)===p.split('/')[3]);if(e){e.connectionStatus='REACHABLE';e.lastTestedAt=now();e.lastTestLatencyMs=32;e.lastTestError='';return ok({...e,status:'REACHABLE',latencyMs:32})}}
@@ -74,9 +95,20 @@ if(p.match(/\/deployment-tasks\/[^/]+\/execution$/)){const t=stores['/api/deploy
 if(p.match(/\/environments\/[^/]+$/)&&method==='PUT'){const e=environments.find(e=>String(e.id)===p.split('/')[3]);if(!e)return fail('环境不存在',404);Object.assign(e,body,{releaseVersion:versions.find(v=>v.id===body.releaseVersionId)||e.releaseVersion,version:(e.version||0)+1});return ok(e)}
 
 if(p==='/api/tools/binlog/export')return new Response(Uint8Array.from(atob(window.__mockXlsx),c=>c.charCodeAt(0)),{headers:{'Content-Type':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}});
-if(p==='/api/tools/binlog/commands/validate')return ok({...commands[0],...body,conflict:null});
-if(p==='/api/tools/binlog/commands'){if(method!=='GET'){commands.push({...body,builtin:false,revision:'mock-2'});return ok(commands.at(-1))}return ok(commands)}
-if(p.startsWith('/api/tools/binlog/commands/'))return ok(commands.find(c=>p.endsWith(c.code))||commands[0]);
+if(p==='/api/tools/binlog/commands/validate'){
+  try{const value=mockCommand(body),existing=commands.find(c=>c.code===value.code);return ok({...value,builtin:false,revision:'mock-preview',conflict:existing?{name:existing.name,revision:existing.revision,builtin:existing.builtin}:null})}catch(error){return fail(error.message,400)}
+}
+if(p==='/api/tools/binlog/commands'){
+  if(method==='GET')return ok(commands);
+  if(method==='POST'){
+    try{const value=mockCommand(body.definition),index=commands.findIndex(c=>c.code===value.code),existing=commands[index];if((existing?.revision??null)!==(body.expectedRevision??null))return fail('命令已存在或已更新，请重新校验并确认覆盖');const saved={...value,builtin:false,revision:'mock-'+(++commandRevision)};if(index<0)commands.push(saved);else commands[index]=saved;return ok(saved,201)}catch(error){return fail(error.message,400)}
+  }
+}
+if(p.startsWith('/api/tools/binlog/commands/')){
+  const code=p.split('/').at(-1).toLowerCase(),index=commands.findIndex(c=>c.code===code),current=commands[index];if(!current)return fail('命令不存在',404);
+  if(method==='DELETE'){if(current.builtin)return fail('内置命令不能删除',400);if(current.revision!==body.revision)return fail('配置已更新，请刷新');const builtin=builtinCommands.find(c=>c.code===code);if(builtin)commands[index]=clone(builtin);else commands.splice(index,1);return new Response(null,{status:204})}
+  return ok(current);
+}
 if(p==='/api/tools/binlog/parse'){const c=commands.find(c=>c.code===body.code);if(!c)return fail('未知命令',400);const records=(body.batch?body.text.split(/\r?\n/):[body.text]).filter(t=>t.trim()).map((text,i)=>{try{const result=window.__prototypeBinlog.parseFrame(c.code,c.fields,text,body.feature);return {line:i+1,status:result.matched?'success':'filtered',result}}catch(e){return {line:i+1,status:'error',error:e.message}}});return ok({revision:c.revision,summary:{total:records.length,success:records.filter(r=>r.status==='success').length,errors:records.filter(r=>r.status==='error').length,filtered:records.filter(r=>r.status==='filtered').length},records})}
 if(p==='/api/container-resource-namespaces')return ok({namespaces:['demo','default','kube-system']});
 if(p==='/api/container-resource-types')return ok(resourceTypes);
@@ -94,14 +126,45 @@ if(p.endsWith('/results')){const task=stores['/api/build-tasks'].find(t=>t.id===
 if(p==='/api/quality/jobs'&&method==='POST'){const j={...clone(qualityJob),input:body,parts:qualityParts(body),createdAt:now(),id:'quality-'+Date.now()};stores[p].unshift(j);return ok(j)}
 if(p==='/api/deployment-tasks'&&method==='POST'){const t={...body,id:deliveryId(),createdAt:now(),module:'gateway-service',namespace:body.namespace||'demo',revision:1,status:body.mode==='QUICK'?'SUCCEEDED':'AWAITING_REVIEW',events:[event('读取产物与目标环境配置'),event(body.mode==='QUICK'?'模拟快速部署成功':'已生成配置，等待审阅',2,body.mode==='QUICK'?'SUCCEEDED':'AWAITING_REVIEW')],services:Object.fromEntries((body.services||[]).map(service=>[service,{service,stage:body.mode==='QUICK'?'SUCCEEDED':'ANALYZED',values:'replicas: 2\nimage:\n  repository: mock.local/gateway\n  tag: 27.10\nservice:\n  port: 8080\n',replaceItems:[{location:'values.yaml',key:'image.tag',oldValue:'27.09',newValue:'27.10'}],unresolvedImages:[],errors:[]}]))};stores[p].unshift(t);return ok(t)}
 
-if(p==='/api/automation/group-mr'){pending.forEach(workspace);return ok({config,pending,history,metrics:{pending:pending.length,issues:pending.filter(r=>r.phase==='ISSUES').length,mergedToday:history.length},monitor:{lastPollAt:now(),lastSuccessAt:now(),running:false,state:'idle',readCount:30,newCount:24,matchedCount:24,filteredCount:6,message:'模拟监听已连接，等待新消息',logs:[{time:now(),level:'info',message:'模拟读取完成：24 条 MR 已加入检视列表'}]}})}
+if(p==='/api/automation/group-mr/submit'&&method==='POST'){
+  let target;try{target=new URL(body.url)}catch{return fail('请输入合法的 CodeHub MR 链接',400)}
+  const match=target.pathname.match(/^\/(.+)\/merge_requests\/([1-9]\d*)\/?$/);
+  if(target.protocol!=='https:'||target.hostname!=='codehub-y.huawei.com'||!match||target.username||target.password||target.search||target.hash)return fail('请输入合法的 CodeHub MR 链接',400);
+  const duplicate=pending.find(r=>r.repo===match[1]&&r.iid===match[2]);if(duplicate)return ok({entryId:duplicate.id,duplicate:true});
+  const record={id:'manual-'+Date.now(),repo:match[1],iid:match[2],url:target.href,title:'手动提交的演示 MR',sha,previousSha:'',phase:'HUMAN',stage:'HUMAN',status:'模拟检视完成，等待人工审核',source:'manual',notificationReceiver:config.authorizedSender,sender:config.authorizedSender,createdAt:now(),updatedAt:now(),writePending:'',pipelinePassed:true,humanReviewRequired:true,manualGateRequired:true,piReview:{sha,source:'codehub',ok:true,findings:[]},reviewComments:[],events:[{time:now(),phase:'HUMAN',message:'模拟 Agent 检视完成；通知仅在演示中记录'}]};
+  pending.unshift(record);workspace(record);return ok({entryId:record.id,duplicate:false});
+}
+if(['/api/automation/group-mr','/api/automation/group-mr/status'].includes(p)){pending.forEach(workspace);return ok({config,pending,history,metrics:{pending:pending.length,issues:pending.filter(r=>r.phase==='ISSUES').length,mergedToday:history.length},monitor:{lastPollAt:now(),lastSuccessAt:now(),running:false,state:'idle',readCount:30,newCount:24,matchedCount:24,filteredCount:6,message:'模拟监听已连接，等待新消息',logs:[{time:now(),level:'info',message:'模拟读取完成：24 条 MR 已加入检视列表'}]}})}
 if(p.endsWith('/group-mr/config')){config={...config,...body};return ok(config)}
 if(p.endsWith('/group-mr/records/delete')){for(const id of body.ids||[]){for(const list of [pending,history]){const at=list.findIndex(r=>r.id===id);if(at>=0)list.splice(at,1)}}return ok({deleted:body.ids?.length||0})}
 const mr=p.match(/\/group-mr\/records\/([^/]+)\/([^/]+)$/);if(mr){const r=[...pending,...history].find(r=>r.id===decodeURIComponent(mr[1]));if(!r)return fail('模拟 MR 不存在',404);const action=mr[2],w=workspace(r);if(body.sha&&body.sha!==r.sha)return fail('MR 提交已变化，请刷新后核对');
 if(action.startsWith('acknowledge-')){r.writePending='';r.phase='HUMAN';return ok(r)}
 if(action==='file-context'){const f=w.files.find(f=>f.path===url.searchParams.get('path'))||w.files[0];return ok({sha:r.sha,path:f.path,originalDiff:f.diff,diff:f.diff+'\n // 模拟完整文件上下文\n // additional context'})}
 if(action==='workspace'){if(method==='GET')return ok(w);const thread=w.threads.find(t=>t.id===body.discussionId||t.id===body.threadId||t.id===body.id);if(body.action==='resolve'){if(!body.confirmed)return fail('需要确认关闭意见');if(thread)thread.resolved=true;else return fail('意见不存在')}else if(body.action==='reply'){if(!thread)return fail('意见不存在');thread.notes.push({id:'note-'+Date.now(),body:body.body,author:'demo-owner'})}else{w.threads.push({id:'new-'+Date.now(),body:body.body,author:'demo-owner',resolved:false,resolvable:true,path:body.path,line:body.line,headSha:r.sha,fingerprint:'d'.repeat(64),notes:[{id:'new-note',body:body.body,author:'demo-owner'}]})}workspaces[r.id].confirmedOperationId=body.operationId;return ok({ok:true})}
-if(action==='human-review'){if(!w.readiness.ready)return fail('存在未关闭意见或流水线未通过');r.humanReview={...body,at:now()};r.phase=body.decision==='pass'?'REVIEW':'HUMAN';r.status=body.decision==='pass'?'审核通过，等待合入':'审核不通过';knowledge.reviews.push({id:'review-'+Date.now(),repo:r.repo,iid:r.iid,sha:r.sha,...body});return ok(r)}
+if(action==='review-jobs'){
+if(r.running||r.queued||['queued','checking','running'].includes(r.reviewJob?.status))return fail('当前正在执行或排队');
+const job=r.reviewJob={id:'job-'+r.id,sha:r.sha,status:'queued'};r.status='审核任务已提交，等待核验';r.queued=true;
+setTimeout(()=>{
+if(!pending.includes(r)||r.sha!==job.sha)return;
+r.queued=false;const current=workspace(r);
+if(!current.readiness.ready){job.status='failed';job.error=current.readiness.reason;r.status=job.error;return;}
+r.humanReview={...body,sha:r.sha,at:now()};r.phase='REVIEW';r.status='人工审核已通过，后台继续核对门禁与合入';r.running=true;job.status='running';knowledge.reviews.push({id:'review-'+Date.now(),repo:r.repo,iid:r.iid,sha:r.sha,...body});
+setTimeout(()=>{if(!pending.includes(r)||r.sha!==job.sha)return;r.running=false;r.updatedAt=now();const latest=workspace(r);if(!latest.readiness.ready){r.phase='ISSUES';r.status=latest.readiness.reason;job.status='failed';job.error=r.status;return;}r.phase='DONE';r.status='检视、审核与合并已完成';r.mergedAt=now();job.status='completed';r.events.push({time:now(),phase:'DONE',message:r.status});pending.splice(pending.indexOf(r),1);history.unshift(r)},350);
+},50);
+return ok(r,202)}
+if(action==='human-review'){
+if(r.running||r.queued)return fail('当前正在执行或排队');
+if(!w.readiness.ready)return fail('存在未关闭意见或流水线未通过');
+const lacksMergePermission=r.phase==='NO_PERMISSION';r.humanReview={...body,at:now()};r.phase=body.decision==='pass'?'REVIEW':'HUMAN';r.status=body.decision==='pass'?'人工审核已通过，正在重新核对提交和门禁':'审核不通过';r.running=body.decision==='pass';knowledge.reviews.push({id:'review-'+Date.now(),repo:r.repo,iid:r.iid,sha:r.sha,...body});
+// Match submitReview: acknowledge the human decision, then continue the existing checked workflow.
+if(body.decision==='pass')setTimeout(()=>{
+if(!pending.includes(r)||r.sha!==body.sha||r.humanReview?.decision!=='pass')return;
+r.running=false;r.updatedAt=now();const current=workspace(r);
+if(!current.readiness.ready){r.phase='ISSUES';r.status=current.readiness.reason;return;}
+if(lacksMergePermission){r.phase='NO_PERMISSION';r.status='当前账号无合并权限';return;}
+r.phase='DONE';r.status='检视、审核与合并已完成';r.mergedAt=now();r.events.push({time:now(),phase:'DONE',message:r.status});pending.splice(pending.indexOf(r),1);history.unshift(r);
+},400);
+return ok(r)}
 if(action==='merge'){if(!body.confirmed)return fail('请明确确认合入');if(r.phase==='NO_PERMISSION')return fail('模拟账号没有合并权限');if(!w.readiness.ready||r.humanReview?.decision!=='pass')return fail('请完成检视意见、流水线与人工审核');r.phase='DONE';r.status='已合入';r.mergedAt=now();pending.splice(pending.indexOf(r),1);history.unshift(r);return ok(r)}
 if(['continue-review','retry','refresh','recheck'].includes(action)){r.phase=w.readiness.ready?'HUMAN':'ISSUES';r.status='模拟重新检查完成';return ok(r)}r.events.push({at:now(),stage:action,message:'模拟执行 '+action});return ok(r)}
 if(p.startsWith('/api/automation/effectiveness')){
@@ -138,9 +201,11 @@ if(p==='/api/auto-ut/governance'&&method==='GET'){
   let cursor=Date.now(),streak=0;if(!recordDays.has(day(cursor)))cursor-=86400000;while(recordDays.has(day(cursor))){streak++;cursor-=86400000}
   return ok({records,blockedRecords:[],metrics:{streak,fixedServices:services('fixedIds'),fixedCases:cases('fixedIds'),supplementedServices:services('addedIds'),addedCases:cases('addedIds')}});
 }
-for(const [base,list]of Object.entries(stores)){if(p!==base&&!p.startsWith(base+'/'))continue;const tail=p.slice(base.length+1),id=tail.split('/')[0],record=list.find(r=>String(r.id)===id);if(method==='GET')return ok(p===base?list:record||[]);if(method==='DELETE'){const at=list.indexOf(record);if(at>=0)list.splice(at,1);return ok({ok:true})}if(record){if(tail.endsWith('/deploy')){record.status='SUCCEEDED';for(const service of Object.values(record.services||{}))service.stage='SUCCEEDED'}if(tail.endsWith('/review'))record.status='AWAITING_REVIEW';Object.assign(record,body);return ok(record)}const created={...body,id:'mock-'+Date.now(),createdAt:now(),updatedAt:now(),status:'SUCCEEDED',revision:0,version:0};if(base.endsWith('/environments'))Object.assign(created,{id:Math.max(0,...environments.map(e=>Number(e.id)))+1,releaseVersion:versions.find(v=>v.id===body.releaseVersionId)||versions[0],connectionStatus:'UNTESTED'});if(base.endsWith('/reports'))Object.assign(created,clone(reports[0]),{id:'report-'+Date.now()});list.unshift(created);return ok(created)}
+for(const [base,list]of Object.entries(stores)){if(p!==base&&!p.startsWith(base+'/'))continue;const tail=p.slice(base.length+1),id=tail.split('/')[0],record=list.find(r=>String(r.id)===id);if(method==='GET')return ok(p===base?list:record||[]);if(method==='DELETE'){const at=list.indexOf(record);if(at>=0)list.splice(at,1);return ok({ok:true})}if(record){if(tail.endsWith('/deploy')){record.status='SUCCEEDED';for(const service of Object.values(record.services||{}))service.stage='SUCCEEDED'}if(tail.endsWith('/review'))record.status='AWAITING_REVIEW';Object.assign(record,body);return ok(record)}const created={...body,id:'mock-'+Date.now(),createdAt:now(),updatedAt:now(),status:'SUCCEEDED',revision:0,version:0};if(base.endsWith('/environments'))Object.assign(created,{id:Math.max(0,...environments.map(e=>Number(e.id)))+1,releaseVersion:versions.find(v=>v.id===body.releaseVersionId)||versions[0],connectionStatus:'UNTESTED'});if(base.endsWith('/reports'))Object.assign(created,clone(reports[0]),{id:'report-'+Date.now()});if(base==='/api/platform/applications')created.id=crypto.randomUUID();list.unshift(created);return ok(created)}
 return fail('该接口尚未构造模拟响应：'+method+' '+p,501)};
 // Block every live transport; external applications remain a local placeholder.
+window.XMLHttpRequest=class{open(){throw Error('离线演示禁止真实网络请求')}};
+document.addEventListener('submit',event=>event.preventDefault(),true);
 window.EventSource=class {constructor(url){this.readyState=1;this.listeners={};this.timer=setTimeout(()=>{if(this.readyState===2)return;const parts=url.split('/'),base='/api/'+parts[2]+'/'+(parts[2]==='auto-ut'?'tasks':''),id=parts[2]==='auto-ut'?parts[4]:parts[3];const list=stores[parts[2]==='auto-ut'?base:'/api/'+parts[2]]||[];const task=list.find(t=>t.id===id);for(const item of task?.events||[event('模拟任务连接成功')]){const payload=parts[2]==='auto-ut'?{...item,type:'message_delta',content:item.message+'\n'}:item;const e={data:JSON.stringify(payload),lastEventId:String(item.sequence)};this.onmessage?.(e);for(const fn of this.listeners.message||[])fn(e)}},80)}addEventListener(type,fn){(this.listeners[type]??=[]).push(fn)}removeEventListener(type,fn){this.listeners[type]=(this.listeners[type]||[]).filter(f=>f!==fn)}close(){this.readyState=2;clearTimeout(this.timer)}};window.WebSocket=class{constructor(){throw Error('原型禁用真实 WebSocket')}};navigator.sendBeacon=()=>false;window.open=()=>{alert('模拟外部链接：本原型不打开真实系统');return null};document.addEventListener('click',e=>{const a=e.target.closest('a');if(a&&a.getAttribute('href')?.startsWith('/api/')){e.preventDefault();const blob=new Blob(['模拟导出记录\nservice,status\ngateway-service,SUCCEEDED'],{type:'text/csv;charset=utf-8'});const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download='mock-export.csv';link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000);return}if(a&&/^https?:/.test(a.href)&&!a.href.startsWith(location.origin)){e.preventDefault();alert('此链接指向模拟外部系统。')}},true);
-window.addEventListener('DOMContentLoaded',()=>{if(typeof tasks!=='undefined'){tasks.push(...stores['/api/build-tasks'].map(t=>({_apiId:t.id,id:'build-'+t.id,kind:'build',input:t.module,environment:t.environmentName,status:t.status==='FAILED'?'failed':'success',statusLabel:t.status==='FAILED'?'失败':'成功',updated:'模拟记录'})));if(typeof render==='function')render(false)}const note=document.createElement('div');note.id='prototype-mode-note';note.textContent='交互原型 · 模拟数据 · 刷新重置';note.style='position:fixed;right:12px;bottom:10px;z-index:99999;background:#263347;color:white;padding:6px 12px;border-radius:5px;font:12px system-ui;pointer-events:none';document.body.append(note)});
+window.addEventListener('DOMContentLoaded',()=>{if(typeof tasks!=='undefined'){tasks.push(...stores['/api/build-tasks'].map(t=>({_apiId:t.id,id:'build-'+t.id,kind:'build',input:t.module,environment:t.environmentName,status:t.status==='FAILED'?'failed':'success',statusLabel:t.status==='FAILED'?'失败':'成功',updated:'模拟记录'})));if(typeof render==='function')render(false)}const note=document.createElement('div');note.id='prototype-mode-note';note.textContent='离线交互演示 · 模拟数据 · 刷新重置';note.style='position:fixed;right:12px;bottom:10px;z-index:99999;background:#263347;color:white;padding:6px 12px;border-radius:5px;font:12px system-ui;pointer-events:none';document.body.append(note)});
 })();

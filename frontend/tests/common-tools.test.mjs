@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {JSDOM} from 'jsdom';
-const html=await readFile(new URL('../../index.html',import.meta.url),'utf8');
+const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
 const wait=()=>new Promise(r=>setTimeout(r,30));
 const command={code:'abcd',name:'测试 <img src=x>',fields:[],sample:'abcd0000',builtin:true,revision:'r1'};
 function page(hash='',parseResult=null){

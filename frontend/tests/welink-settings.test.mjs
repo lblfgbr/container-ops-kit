@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {JSDOM} from 'jsdom';
-const html=await readFile(new URL('../../index.html',import.meta.url),'utf8');
+const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
 const pause=()=>new Promise(resolve=>setTimeout(resolve,100));
 test('connection settings saves MCP independently of token and restores defaults only after save',async()=>{
  const defaults={packageUrl:'https://example.test/default.tar.gz',indexUrl:'https://example.test/simple',insecureHosts:'example.test'};

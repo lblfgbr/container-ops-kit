@@ -3,7 +3,7 @@ import {readFile} from 'node:fs/promises'
 import test from 'node:test'
 import {JSDOM} from 'jsdom'
 
-const html=await readFile(new URL('../../index.html',import.meta.url),'utf8')
+const html=await readFile(new URL('../index.html',import.meta.url),'utf8')
 const sha='a'.repeat(40),currentSha='b'.repeat(40),flush=()=>new Promise(resolve=>setTimeout(resolve,30))
 
 async function setup(t,{pending='检视',stale=true,running=false,failAck=false,failReload=false,operationId=''}={}){

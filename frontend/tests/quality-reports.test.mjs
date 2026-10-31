@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {JSDOM} from 'jsdom';
-const html=await readFile(new URL('../../index.html',import.meta.url),'utf8');
+const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
 const config={versions:[{version:'R27C10',baseBranch:'release/27',ticket:'DTS1'},{version:'R27C00',baseBranch:'release/26',ticket:'DTS2'}],dateMode:'yesterday',username:'tester',ticket:'DTS1',workspaceRoot:'/tmp',schedule:{enabled:false,frequency:'weekdays',weekday:1,time:'09:00',timezone:'Asia/Shanghai',action:'FETCH'}};
 const settings={url:'http://grafana/api/tsdb/query',datasourceId:4,timeoutSeconds:60,parallel:2,auth:'none'};
 const pause=()=>new Promise(r=>setTimeout(r,10));

@@ -26,7 +26,7 @@ test('旧任务请求晚返回不能覆盖新任务结果，失败可手动重�
 })
 
 test('完整构建页面恢复历史任务并显示结果，模式切换不会串用旧结果',async()=>{
- const html=await readFile(new URL('../../index.html',import.meta.url),'utf8')
+ const html=await readFile(new URL('../index.html',import.meta.url),'utf8')
  const runtime=(await readFile(new URL('../src/prototype-runtime.js',import.meta.url),'utf8')).replace(/^import .*\n/gm,'')
  const task={id:'00000000-0000-4000-8000-000000000001',mode:'COMPARE',status:'SUCCEEDED',module:'mae-access',environmentId:1,environmentName:'build',progress:100,events:[],directories:[],baseline:{archDesignBranch:'master',cbbWebDevBranch:'master'},candidate:{archDesignBranch:'feature',cbbWebDevBranch:'master'}}
  const dom=new JSDOM(html,{url:'http://localhost/#/container/build',runScripts:'dangerously',beforeParse(w){w.scrollTo=()=>{};w.EventSource=class{close(){}};w.localStorage.setItem('container-ops-kit.active-build-task',task.id);w.fetch=async url=>{let result=[];if(url==='/api/release-versions')result=[{id:1,code:'R27C10',name:'R27C10'}];else if(url==='/api/environments')result=[{id:1,releaseVersion:{id:1},type:'BUILD',name:'build',host:'localhost',sshPort:22,workDirectory:'/opt/build',connectionStatus:'REACHABLE'}];else if(url==='/api/build-configuration')result={modules:[{name:'mae-access'}],defaultBranch:'master'};else if(url==='/api/build-tasks')result=[task];else if(url.endsWith('/results'))result={packages:[],comparison:[{service:'demo',status:'UNCHANGED',baseline:pack,candidate:pack,files:[]}]};else if(url.startsWith('/api/build-tasks/'))result=task;else if(url.endsWith('/storage'))result={};return{ok:true,status:200,json:async()=>result}};}})
@@ -47,7 +47,7 @@ test('双分支分页同步选中服务与详情，调整页大小和筛选不�
 })
 
 test('业务仓增删、刷新保留草稿，单分支和双分支传递各自仓库',async()=>{
- const html=await readFile(new URL('../../index.html',import.meta.url),'utf8'),runtime=(await readFile(new URL('../src/prototype-runtime.js',import.meta.url),'utf8')).replace(/^import .*\n/gm,'');const bodies=[];
+ const html=await readFile(new URL('../index.html',import.meta.url),'utf8'),runtime=(await readFile(new URL('../src/prototype-runtime.js',import.meta.url),'utf8')).replace(/^import .*\n/gm,'');const bodies=[];
  const dom=new JSDOM(html,{url:'http://localhost/#/container/build',runScripts:'dangerously',beforeParse(w){w.scrollTo=()=>{};w.EventSource=class{close(){} addEventListener(){}};w.fetch=async(url,options)=>{let result=[];if(url==='/api/release-versions')result=[{id:1,code:'R27C10',name:'R27C10'}];else if(url==='/api/environments')result=[{id:1,releaseVersion:{id:1},type:'BUILD',name:'build',host:'localhost',sshPort:22,workDirectory:'/opt/build',connectionStatus:'REACHABLE'}];else if(url==='/api/build-configuration')result={modules:[{name:'mae-access'}],defaultBranch:'master'};else if(url==='/api/build-tasks'&&options?.method==='POST'){bodies.push(JSON.parse(options.body));return{ok:false,status:400,json:async()=>({message:'mock stopped'})}}else if(url.endsWith('/storage'))result={};return{ok:true,status:200,json:async()=>result}}}});
  try{dom.window.eval(source);dom.window.eval(historySource);dom.window.eval(runtime);await new Promise(r=>setTimeout(r,80));const d=dom.window.document;d.querySelector('[data-page="build"]').click();await new Promise(r=>setTimeout(r,80));
  const fill=(selector,value)=>{const el=d.querySelector(selector);el.value=value;el.dispatchEvent(new dom.window.Event('input',{bubbles:true}))};
