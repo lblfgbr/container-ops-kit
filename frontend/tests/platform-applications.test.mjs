@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {JSDOM} from 'jsdom';
-const html=await readFile(new URL('../../index.html',import.meta.url),'utf8');
+const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
 const pause=()=>new Promise(resolve=>setTimeout(resolve,20));
 const sample={id:'11111111-1111-4111-8111-111111111111',revision:0,name:'日志 <img src=x>',description:'检索 <script>bad()</script>',url:'http://192.0.2.20:5601/',category:'日志检索',openMode:'embedded',workspace:'container',owner:'运维',environment:'研发'};
 function page(hash='',initial=[],handler){

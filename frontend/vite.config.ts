@@ -5,13 +5,13 @@ import {fileURLToPath} from 'node:url'
 const frontendDirectory=resolve(fileURLToPath(import.meta.url),'..')
 
 export default defineConfig({
- root:resolve(frontendDirectory,'..'),
+ root:frontendDirectory,
  plugins:[{
   name:'studio-runtime',
   transformIndexHtml:{
    order:'pre',
    handler(html){
-    return html.replace('</body>','<script type="module" src="/frontend/src/studio-runtime.js"></script></body>')
+    return html.replace('</body>','<script type="module" src="/src/studio-runtime.js"></script></body>')
    }
   }
  }],

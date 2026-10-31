@@ -7,6 +7,7 @@ import { build } from 'vite';
 import ExcelJS from 'exceljs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
+const frontendRoot = resolve(root, 'frontend');
 const bundles = new Map();
 async function bundle(enhanced) {
   if (!bundles.has(enhanced)) bundles.set(enhanced, build({
@@ -33,12 +34,12 @@ async function fixtureScript() {
   return fixture;
 }
 
-// Bundle the shipped modules and the real index, never the accepted prototype HTML.
+// Bundle the shipped modules and frontend/index.html, never the root mock demo.
 export async function studioPage({enhanced=true,styles=false,mock=false}={}) {
   const runtime = await bundle(enhanced);
-  let html = await readFile(resolve(root,'index.html'),'utf8');
+  let html = await readFile(resolve(frontendRoot,'index.html'),'utf8');
   if (styles) {
-    for (const match of [...html.matchAll(/<link rel="stylesheet" href="([^"]+)">/g)]) html=html.replace(match[0],'<style>'+await readFile(resolve(root,match[1].slice(1)),'utf8')+'</style>');
+    for (const match of [...html.matchAll(/<link rel="stylesheet" href="([^"]+)">/g)]) html=html.replace(match[0],'<style>'+await readFile(resolve(frontendRoot,match[1].slice(1)),'utf8')+'</style>');
     html=html.replace('</head>',()=>'<style>'+runtime.css+'</style></head>');
   } else html=html.replace(/<style>[\s\S]*?<\/style>/g,'').replace(/<link rel="stylesheet"[^>]+>/g,'');
   if (mock) {

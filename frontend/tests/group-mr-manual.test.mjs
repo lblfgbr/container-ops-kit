@@ -3,7 +3,7 @@ import {readFile} from 'node:fs/promises';
 import test from 'node:test';
 import {JSDOM,VirtualConsole} from 'jsdom';
 
-const html=await readFile(new URL('../../index.html',import.meta.url),'utf8');
+const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
 const response=(data,ok=true)=>({ok,status:ok?200:409,json:async()=>data,text:async()=>JSON.stringify(data)});
 const flush=()=>new Promise(resolve=>setTimeout(resolve,30));
 const url='https://codehub-y.huawei.com/MAE-M/FMEMate/FMEMateService/merge_requests/1756';

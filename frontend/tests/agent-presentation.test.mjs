@@ -3,7 +3,7 @@ import {readFile} from 'node:fs/promises'
 import test from 'node:test'
 import {JSDOM} from 'jsdom'
 
-const html=await readFile(new URL('../../index.html',import.meta.url),'utf8')
+const html=await readFile(new URL('../index.html',import.meta.url),'utf8')
 const pause=()=>new Promise(resolve=>setTimeout(resolve,170))
 async function setup({events=[],saved}={}){
   const task={id:'agent-ui',repository:'ExampleService',reportVersion:'R27C00',status:'REPAIRING',nextStage:'REPAIR',progress:45,message:'正在修复',lineGoal:0.8,branchGoal:0.7,liveEvents:events}

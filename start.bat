@@ -129,7 +129,8 @@ function Test-LegacyPortOwner($Process, [int]$Port) {
         }
         if ($Port -eq $FrontendPort -and $line -match '(?i)(?:^|\s)"?(?:\.\\)?node_modules\\vite\\bin\\vite\.js(?:"|\s|$)') {
             $package = Invoke-RestMethod -Uri "http://127.0.0.1:$FrontendPort/package.json" -TimeoutSec 2
-            return ($package.name -eq 'container-ops-kit' -and $package.scripts.start -eq 'node dist/backend-ts/src/main.js')
+            return (($package.name -eq 'container-ops-kit' -and $package.scripts.start -eq 'node dist/backend-ts/src/main.js') -or
+                ($package.name -eq 'container-ops-kit-frontend' -and $package.scripts.dev -eq 'vite'))
         }
     } catch { return $false }
     return $false

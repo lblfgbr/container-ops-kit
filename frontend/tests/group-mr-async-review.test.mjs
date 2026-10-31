@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import {readFile} from 'node:fs/promises'
 import {JSDOM} from 'jsdom'
 
-const html=await readFile(new URL('../../index.html',import.meta.url),'utf8')
+const html=await readFile(new URL('../index.html',import.meta.url),'utf8')
 const sha='a'.repeat(40)
 const flush=()=>new Promise(resolve=>setTimeout(resolve,30))
 const row=id=>({id,repo:'MAE-M/FMEMate/FMEMateService',iid:id,url:'https://codehub-y.huawei.com/MAE-M/FMEMate/FMEMateService/merge_requests/'+id,sha,phase:'HUMAN',status:'等待人工审核',sender:'developer',createdAt:'2026-10-31T01:00:00Z',updatedAt:'2026-10-31T01:00:00Z',writePending:'',reviewComments:[],readiness:{sha,checkedAt:new Date().toISOString(),ready:true,reason:''},pipelinePassed:true,humanReviewRequired:true,piReview:{sha,source:'codehub',ok:true,findings:[]},events:[]})

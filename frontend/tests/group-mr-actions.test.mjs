@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {readFile} from 'node:fs/promises'
 import {JSDOM} from 'jsdom'
-const html=await readFile(new URL('../../index.html',import.meta.url),'utf8')
+const html=await readFile(new URL('../index.html',import.meta.url),'utf8')
 const sha='a'.repeat(40),flush=()=>new Promise(r=>setTimeout(r,40))
 const row=(id,phase='HUMAN')=>({id,repo:'MAE-M/FMEMate/FMEMateService',iid:id,url:'https://codehub-y.huawei.com/MAE-M/FMEMate/FMEMateService/merge_requests/'+id,sha,phase,status:'待处理',sender:'developer',createdAt:'2026-09-28T11:00:00Z',updatedAt:'2026-09-28T11:00:00Z',writePending:'',reviewComments:[],readiness:{sha,checkedAt:new Date().toISOString(),ready:true,reason:''},pipelinePassed:true,humanReviewRequired:true,humanReview:phase==='HUMAN'?undefined:{sha,decision:'pass'},piReview:{sha,source:'codehub',ok:true,findings:[]},events:[]})
 async function setup(t,{records=[row('1'),row('2'),row('3','NO_PERMISSION'),row('4','INTERRUPTED')],write}={}){

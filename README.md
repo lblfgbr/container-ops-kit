@@ -144,6 +144,14 @@ npm run dev --prefix frontend -- --host 127.0.0.1
 
 ## 页面入口
 
+正式应用以 `frontend/index.html` 为页面源，通过上述 Vite 命令启动，调用真实后端 API；生产构建输出到 `frontend/dist/`。
+
+根目录 `mock-demo.html` 是独立的 mock 交互演示和页面方案确认稿，可以直接双击打开，或单独分享这一个文件，用于演示和重构分析。样式、脚本和示例数据均已内嵌，无需启动后端；页面显示“离线交互演示 · 模拟数据 · 刷新重置”。模拟操作只改变当前页面内存中的数据，刷新后重置，不连接真实环境或提交真实业务操作。
+
+页面相关修改遵循“先演示、后实现”：先修改根目录 `mock-demo.html`，提供可交互的页面方案；用户明确确认后，再将方案实现到 `frontend/index.html`、`frontend/src/` 等正式代码，并完成测试。确认前不修改正式页面源码，也不先改正式代码再生成演示。具体开发约束见根目录 `AGENTS.md`。
+
+`npm run demo` 可从正式源码首次生成演示，需要先安装根目录和前端依赖；已有 `mock-demo.html` 时命令会拒绝覆盖，以保留页面确认稿。用户已确认的方案完成正式实现，且演示中没有待确认或尚未同步的修改后，才使用 `npm run demo -- --overwrite` 同步演示。可复用的示例数据维护在 `frontend/prototypes/current-project-mock.js`。生成演示不属于正式启动和构建流程。
+
 首页为工具中心（`#/home/tools`），全局概览（`#/home/overview`）只汇总已保存的任务和环境状态。自动化、容器运维的原有页面地址继续可用；虚机运维保持预留状态。
 
 应用中心（`#/applications`）可创建、编辑和删除 HTTP/HTTPS 工具入口，填写地址、功能说明并关联工作空间。应用配置保存在现有 SQLite 中，全平台共享；收藏仅保存在当前浏览器。站内打开使用 iframe，目标网站不允许嵌入时可选择新标签页打开。后端不会代理访问目标网站，也不增加账号或权限体系。
@@ -162,7 +170,9 @@ npm run dev --prefix frontend -- --host 127.0.0.1
 - `backend-ts/src/modules/applications`：应用中心外部工具入口
 - `backend-ts/src/platform`：SQLite、独立 Worker和通用只读任务
 - `shared`：前后端共享的数据约定
-- `frontend` 与根目录 `index.html`：正式 HTML / JavaScript 页面、Vite 构建、交互样式与前端测试
+- `frontend/index.html` 与 `frontend/src/`：正式 HTML / JavaScript 页面及交互样式
+- `frontend`：Vite 构建、前端测试与 mock 演示生成脚本
+- 根目录 `mock-demo.html`：可直接打开的独立 mock 交互演示及页面方案确认稿，不参与正式应用启动和构建
 
 SQLite 默认写入 `data/platform/tasks.sqlite`。数据库使用进程独占锁，不能同时启动两个后端。服务只允许本机浏览器来源；它没有多用户认证，不能直接暴露到公网。
 

@@ -3,7 +3,7 @@ import {readFile} from 'node:fs/promises'
 import test from 'node:test'
 import {JSDOM} from 'jsdom'
 
-const html=await readFile(new URL('../../index.html',import.meta.url),'utf8')
+const html=await readFile(new URL('../index.html',import.meta.url),'utf8')
 const sha='a'.repeat(40),flush=()=>new Promise(resolve=>setTimeout(resolve,30))
 async function setup(t,{running=false,failRefresh=false}={}){
  const record={id:'restart',repo:'Demo/Service',iid:'1',sha,phase:running?'PI':'INTERRUPTED',stage:'PI',running,writePending:'Pi 提交检视意见',status:running?'Agent 正在全量检视当前提交':'服务重启，原执行中断，请重新发送 MR 链接',events:[],readiness:{sha,checkedAt:'2026-10-25T01:00:00Z',ready:false,reason:'仍有未关闭的检视意见'},pipelinePassed:true}

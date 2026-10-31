@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {JSDOM,VirtualConsole} from '../node_modules/jsdom/lib/api.js';
 
-const html=await readFile(new URL('./ops-studio-prototype.html',import.meta.url),'utf8');
+const html=await readFile(new URL('../../mock-demo.html',import.meta.url),'utf8');
 const errors=[],console=new VirtualConsole();
 console.on('jsdomError',error=>{if(!error.message.includes('Not implemented'))errors.push(error.message)});
 const dom=new JSDOM(html,{url:'http://localhost/#/tools/json',runScripts:'dangerously',virtualConsole:console,beforeParse(w){

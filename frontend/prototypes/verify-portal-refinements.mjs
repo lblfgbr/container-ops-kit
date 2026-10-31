@@ -3,7 +3,7 @@ import {readFile} from 'node:fs/promises';
 import {JSDOM,VirtualConsole} from '../node_modules/jsdom/lib/api.js';
 
 const errors=[],vc=new VirtualConsole();vc.on('jsdomError',error=>{if(!error.message.includes('Not implemented'))errors.push(error.message)});
-const dom=new JSDOM(await readFile(new URL('./ops-studio-prototype.html',import.meta.url),'utf8'),{url:'http://localhost/#/applications',runScripts:'dangerously',virtualConsole:vc,beforeParse(w){
+const dom=new JSDOM(await readFile(new URL('../../mock-demo.html',import.meta.url),'utf8'),{url:'http://localhost/#/applications',runScripts:'dangerously',virtualConsole:vc,beforeParse(w){
   w.Response=Response;w.Headers=Headers;w.scrollTo=()=>{};w.matchMedia=()=>({matches:false});w.HTMLElement.prototype.scrollIntoView=function(){};
 }});
 const w=dom.window,d=w.document,wait=()=>new Promise(resolve=>setTimeout(resolve,180));

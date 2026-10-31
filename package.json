@@ -1,12 +1,13 @@
 {
   "name": "container-ops-kit",
-  "version": "0.2.200",
+  "version": "0.2.202",
   "private": true,
   "type": "module",
   "engines": {
     "node": ">=22.22.3 <23 || >=24.15.0 <25"
   },
   "scripts": {
+    "demo": "node frontend/prototypes/generate-current-prototype.mjs",
     "build": "tsc -p tsconfig.json",
     "migrate": "node scripts/migrate-legacy-h2.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",

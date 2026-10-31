@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {readFile} from 'node:fs/promises'
 import {JSDOM} from 'jsdom'
-const html=await readFile(new URL('../../index.html',import.meta.url),'utf8'),sha='a'.repeat(40),flush=()=>new Promise(r=>setTimeout(r,40))
+const html=await readFile(new URL('../index.html',import.meta.url),'utf8'),sha='a'.repeat(40),flush=()=>new Promise(r=>setTimeout(r,40))
 const row=id=>({id:String(id),repo:'MAE-M/Access/Repo'+id,iid:String(id),sha,phase:'ISSUES',status:'待修改',sender:'developer',events:[],reviewComments:[],writePending:'',pipelinePassed:true,readiness:{sha,checkedAt:new Date().toISOString(),ready:false,reason:'仍有未关闭的检视意见'},updatedAt:'2026-10-22T10:00:00Z'})
 async function setup(t,{unsupported=false,failWrite=false,failReloadAfterClose=false,fileCount=0,extraThreads=[],contextFixture=false,failContext=false,staleReview=false,staleEntry=false}={}){
  const records=Array.from({length:36},(_,i)=>row(i+1)),writes=[],fileReads=[];let closed=false,replies=[],reviewAttempted=false

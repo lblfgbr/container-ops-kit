@@ -3,7 +3,7 @@ import {readFile} from 'node:fs/promises'
 import test from 'node:test'
 import {JSDOM} from 'jsdom'
 
-const 页面路径 = new URL('../../index.html', import.meta.url)
+const 页面路径 = new URL('../index.html', import.meta.url)
 const 页面 = await readFile(页面路径, 'utf8')
 const 项目配置 = JSON.parse(await readFile(new URL('../../package.json', import.meta.url), 'utf8'))
 

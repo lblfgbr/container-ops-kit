@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {JSDOM,VirtualConsole} from '../node_modules/jsdom/lib/api.js';
-const html=await readFile(process.argv[2]||new URL('./ops-studio-prototype.html',import.meta.url),'utf8');
+const html=await readFile(process.argv[2]||new URL('../../mock-demo.html',import.meta.url),'utf8');
 const errors=[],vc=new VirtualConsole();vc.on('jsdomError',error=>{if(!error.message.includes('Not implemented'))errors.push(error.message)});
 const dom=new JSDOM(html,{url:'http://localhost/#/automation',runScripts:'dangerously',virtualConsole:vc,beforeParse(w){
   w.Response=Response;w.Headers=Headers;w.scrollTo=()=>{};w.matchMedia=()=>({matches:false});
@@ -44,14 +44,23 @@ try{
   assert.ok([...d.querySelectorAll('[data-record-select]')].every(input=>input.checked),'Moved select-all retains original state change handler');
   assert.equal(find('[data-cleanup-records]').disabled,false);
   await click('.ax-select-all [data-record-select-all]');assert.equal(find('[data-cleanup-records]').disabled,true);
+  const remove=find('[data-delete-record]'),recordId=remove.dataset.deleteRecord;
+  assert.equal(remove.closest('.ux-row-more'),null,'Record deletion is a direct action');
+  const beforeDelete=w.__mockRequests.length;
+  await click('[data-delete-record]');assert.ok(find('.studio-confirm-dialog'));
+  assert.ok(w.__mockRequests.slice(beforeDelete).every(request=>['GET','HEAD'].includes(request.method)),'Opening deletion confirmation does not write');
+  await click('[data-studio-cancel]');
+  assert.equal(d.querySelector('.studio-confirm-dialog'),null);
+  assert.ok(d.querySelector('[data-delete-record="'+recordId+'"]'),'Cancelling preserves the record');
+  assert.ok(w.__mockRequests.slice(beforeDelete).every(request=>['GET','HEAD'].includes(request.method)),'Cancelling deletion does not write');
+
+  await route('automation/schedules');
+  assert.ok(find('.ax-record-cards [data-label="执行频率"]'));
   await click('.ux-row-more summary');assert.ok(find('.ux-row-more[open]>.ax-action-menu'));
   await click('.page-head h1');assert.equal(d.querySelector('.ux-row-more[open]'),null);
   await click('.ux-row-more summary');const menu=find('.ux-row-more[open]');menu.querySelector('button').focus();
   d.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}));
   assert.equal(menu.open,false);assert.equal(d.activeElement,menu.querySelector('summary'));
-
-  await route('automation/schedules');
-  assert.ok(find('.ax-record-cards [data-label="执行频率"]'));
   await click('.ux-row-more summary');
   const more=[...d.querySelectorAll('.ux-row-more')];more[1].querySelector('summary').click();await wait();
   assert.equal(d.querySelectorAll('.ux-row-more[open]').length,1,'Only one row menu stays open');
@@ -104,5 +113,5 @@ try{
   assert.equal(refreshed.attention,summary.attention-1,'Counts reflect the current in-memory task state');
   assert.equal(refreshed.todos.some(todo=>todo.kind==='build'&&todo.id===failedBuild.id),false);
   assert.deepEqual(errors,[]);
-  process.stdout.write('PASS: derived automation/platform metrics; original record select-all; responsive field labels; menu outside/Escape/only-one-open; original schedule toggle/edit; live quality summary and submitted scope; settings actions; exact MR/UT/delivery todo navigation without writes\n');
+  process.stdout.write('PASS: derived automation/platform metrics; original record select-all; direct record deletion with cancellation and no writes; responsive field labels; schedule menu outside/Escape/only-one-open; original schedule toggle/edit; live quality summary and submitted scope; settings actions; exact MR/UT/delivery todo navigation without writes\n');
 }finally{w.close()}

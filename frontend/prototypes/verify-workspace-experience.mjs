@@ -1,9 +1,18 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
+import {fileURLToPath} from 'node:url';
+import {build} from 'vite';
 import {JSDOM,VirtualConsole} from '../node_modules/jsdom/lib/api.js';
-const html=await readFile(new URL('./ops-studio-prototype.html',import.meta.url),'utf8');
-const experience=await readFile(new URL('./workspace-experience.js',import.meta.url),'utf8');
-const original=html.replace(experience,'');assert.notEqual(original,html,'Experience script must be separable from original behavior');
+const html=await readFile(new URL('../../mock-demo.html',import.meta.url),'utf8');
+// Compare the same offline HTML and mock transport with the original business
+// runtime. The enhanced entry is bundled, so it cannot be removed as source text.
+const result=await build({configFile:false,root:fileURLToPath(new URL('../',import.meta.url)),logLevel:'silent',build:{write:false,minify:false,lib:{entry:fileURLToPath(new URL('../tests/fixtures/baseline-runtime.js',import.meta.url)),name:'DemoBaseline',formats:['iife']}}});
+const output=(Array.isArray(result)?result[0]:result).output;
+const baselineRuntime=output.filter(item=>item.type==='chunk').map(item=>item.code).join('\n');
+const demoPresentation=await readFile(new URL('./demo-presentation.js',import.meta.url),'utf8');
+const lastScript=[...html.matchAll(/<script\b[^>]*>[\s\S]*?<\/script>/g)].at(-1);
+assert.ok(lastScript,'The standalone demo includes its inline runtime');
+const original=html.slice(0,lastScript.index)+'<script>'+(demoPresentation+'\n'+baselineRuntime).replaceAll(/<\/script/gi,'<\\/script')+'</script>'+html.slice(lastScript.index+lastScript[0].length);
 const errors=[];
 function create(source,route){const vc=new VirtualConsole();vc.on('jsdomError',e=>{if(!e.message.includes('Not implemented'))errors.push(e.message)});return new JSDOM(source,{url:'http://localhost/#/'+route,runScripts:'dangerously',virtualConsole:vc,beforeParse(w){w.Response=Response;w.Headers=Headers;w.scrollTo=()=>{};w.matchMedia=()=>({matches:false});w.HTMLElement.prototype.scrollIntoView=function(){};w.HTMLDialogElement.prototype.showModal=function(){this.open=true};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'))};}})}
 const wait=()=>new Promise(r=>setTimeout(r,100));
